@@ -1,6 +1,6 @@
 {
-  "name": "claw-core",
-  "version": "1.0.0",
+  "name": "claw-core-v3",
+  "version": "3.0.0",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
