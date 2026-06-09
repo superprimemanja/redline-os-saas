@@ -3,28 +3,23 @@ const app = express();
 
 app.use(express.json());
 
-// simple task engine
-function claw(input) {
-  return {
-    input,
-    tasks: [
-      "analyze input",
-      "break into steps",
-      "execute plan"
-    ]
-  };
-}
+// ✅ THIS FIXES YOUR BLANK PAGE
+app.get("/", (req, res) => {
+  res.send("CLAW / REDLINE OS IS LIVE 🚀");
+});
 
-// API
+// test route
 app.post("/run", (req, res) => {
-  const result = claw(req.body.input);
+  const input = req.body?.input || "none";
 
   res.json({
-    system: "CLAW CORE",
-    result
+    system: "CLAW",
+    input,
+    status: "working"
   });
 });
 
-app.listen(3000, () => {
-  console.log("CLAW RUNNING");
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log("Running on port", PORT);
 });
