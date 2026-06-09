@@ -1,8 +1,30 @@
 const express = require("express");
 const app = express();
 
-app.get("/", (req,res)=>{
-  res.send("REDLINE OS LIVE");
+app.use(express.json());
+
+// simple task engine
+function claw(input) {
+  return {
+    input,
+    tasks: [
+      "analyze input",
+      "break into steps",
+      "execute plan"
+    ]
+  };
+}
+
+// API
+app.post("/run", (req, res) => {
+  const result = claw(req.body.input);
+
+  res.json({
+    system: "CLAW CORE",
+    result
+  });
 });
 
-app.listen(process.env.PORT || 3000);
+app.listen(3000, () => {
+  console.log("CLAW RUNNING");
+});
