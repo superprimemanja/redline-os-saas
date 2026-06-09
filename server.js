@@ -1,119 +1,149 @@
 const express = require("express");
-const axios = require("axios");
 
 const app = express();
 app.use(express.json());
 
 // --------------------
-// MEMORY (temporary but stable)
+// STATE (in-memory fast system)
 // --------------------
 let TASK_QUEUE = [];
 let LOGS = [];
 
 // --------------------
-// BRAIN (REAL + FALLBACK)
+// HIGH-PERFORMANCE BRAIN (non-blocking, optimized)
 // --------------------
-async function brain(input) {
-  // TRY LOCAL AI (Ollama)
-  try {
-    const res = await axios.post("http://localhost:11434/api/generate", {
-      model: "llama3",
-      prompt: `
-You are Claw, an autonomous reasoning system.
-Break the input into simple actionable tasks.
+function brain(input) {
+  const text = (input || "").toLowerCase();
 
-Input: ${input}
-
-Return ONLY bullet tasks.
-`,
-      stream: false
-    });
-
-    return res.data.response
-      .split("\n")
-      .filter(Boolean)
-      .map((t, i) => ({
-        id: Date.now() + i,
-        task: t.replace("-", "").trim(),
-        source: "local-ai"
-      }));
-  } catch (e) {
-    // FALLBACK BRAIN (ALWAYS WORKS)
-    const text = input.toLowerCase();
-
-    let tasks = [];
-
-    if (text.includes("build")) {
-      tasks = ["analyze requirements", "design system", "plan implementation"];
-    } else if (text.includes("money")) {
-      tasks = ["find opportunity", "create strategy", "define execution plan"];
-    } else if (text.includes("fix")) {
-      tasks = ["diagnose issue", "identify root cause", "apply fix plan"];
-    } else {
-      tasks = ["parse input", "generate structured plan"];
+  const taskMap = [
+    {
+      match: ["build", "create", "make"],
+      tasks: [
+        "analyze requirements",
+        "design system architecture",
+        "generate execution plan"
+      ]
+    },
+    {
+      match: ["money", "business", "profit", "startup"],
+      tasks: [
+        "identify opportunity",
+        "analyze market angle",
+        "create monetization strategy"
+      ]
+    },
+    {
+      match: ["fix", "error", "bug", "issue"],
+      tasks: [
+        "diagnose problem",
+        "locate root cause",
+        "apply fix strategy"
+      ]
+    },
+    {
+      match: ["optimize", "speed", "performance"],
+      tasks: [
+        "analyze bottlenecks",
+        "improve execution flow",
+        "reduce latency"
+      ]
     }
+  ];
 
-    return tasks.map((t, i) => ({
-      id: Date.now() + i,
-      task: t,
-      source: "fallback"
-    }));
+  for (const rule of taskMap) {
+    if (rule.match.some(k => text.includes(k))) {
+      return rule.tasks.map((t, i) => ({
+        id: Date.now() + i,
+        task: t,
+        source: "claw-v3"
+      }));
+    }
   }
+
+  // default intelligent fallback
+  return [
+    "parse input",
+    "structure request",
+    "generate step-by-step plan"
+  ].map((t, i) => ({
+    id: Date.now() + i,
+    task: t,
+    source: "claw-v3-default"
+  }));
 }
 
 // --------------------
-// AUTONOMOUS WORKER
+// NON-BLOCKING WORKER (REAL TIME SIMULATION)
 // --------------------
-setInterval(() => {
-  if (TASK_QUEUE.length > 0) {
-    const task = TASK_QUEUE.shift();
+function processQueue() {
+  if (TASK_QUEUE.length === 0) return;
 
-    const result = {
-      task: task.task,
-      status: "completed",
-      timestamp: new Date().toISOString()
-    };
+  const task = TASK_QUEUE.shift();
 
-    LOGS.push(result);
+  const result = {
+    task: task.task,
+    status: "completed",
+    timestamp: new Date().toISOString()
+  };
 
-    console.log("EXECUTED:", result);
-  }
-}, 3000);
+  LOGS.push(result);
+
+  console.log("EXECUTED:", result);
+}
+
+// fast loop without blocking event loop
+setInterval(processQueue, 1000);
 
 // --------------------
 // API
 // --------------------
 app.get("/", (req, res) => {
-  res.send("CLAW CORE ENGINE ONLINE 🚀");
+  res.send("CLAW CORE v3 ONLINE ⚡ REAL-TIME ENGINE ACTIVE");
 });
 
-// send input → system thinks → creates tasks
-app.post("/run", async (req, res) => {
+// main entry
+app.post("/run", (req, res) => {
   const input = req.body?.input || "";
 
-  const tasks = await brain(input);
+  const tasks = brain(input);
 
   TASK_QUEUE.push(...tasks);
 
   res.json({
     input,
     tasks,
-    queue_size: TASK_QUEUE.length
+    queue_size: TASK_QUEUE.length,
+    status: "queued"
   });
 });
 
-// check current tasks
+// live queue
 app.get("/tasks", (req, res) => {
-  res.json(TASK_QUEUE);
+  res.json({
+    queue: TASK_QUEUE,
+    length: TASK_QUEUE.length
+  });
 });
 
-// check execution history
+// execution logs
 app.get("/logs", (req, res) => {
-  res.json(LOGS);
+  res.json({
+    logs: LOGS.slice(-50),
+    total: LOGS.length
+  });
+});
+
+// health check (IMPORTANT for Railway stability)
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    queue: TASK_QUEUE.length,
+    uptime: process.uptime()
+  });
 });
 
 // --------------------
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log("Claw Core running on", PORT);
+  console.log("Claw v3 running on port", PORT);
 });
